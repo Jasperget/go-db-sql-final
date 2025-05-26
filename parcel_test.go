@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 )
@@ -45,11 +46,12 @@ func TestAddGetDelete(t *testing.T) {
 
 	// get
 	got, err := store.Get(id)
-	require.NoError(t, err)
-	require.Equal(t, parcel.Client, got.Client)
-	require.Equal(t, parcel.Status, got.Status)
-	require.Equal(t, parcel.Address, got.Address)
-	require.Equal(t, parcel.CreatedAt[:19], got.CreatedAt[:19]) // сравниваем только дату и время без миллисекунд
+	assert.NoError(t, err)
+	assert.Equal(t, id, got.Number) // проверяем, что номер совпадает
+	assert.Equal(t, parcel.Client, got.Client)
+	assert.Equal(t, parcel.Status, got.Status)
+	assert.Equal(t, parcel.Address, got.Address)
+	assert.Equal(t, parcel.CreatedAt, got.CreatedAt) // сравниваем полностью поле CreatedAt
 
 	// delete
 	err = store.Delete(id)
@@ -81,8 +83,8 @@ func TestSetAddress(t *testing.T) {
 
 	// check
 	got, err := store.Get(id)
-	require.NoError(t, err)
-	require.Equal(t, newAddress, got.Address)
+	assert.NoError(t, err)
+	assert.Equal(t, newAddress, got.Address)
 
 	// clean up
 	_ = store.Delete(id)
@@ -151,18 +153,14 @@ func TestGetByClient(t *testing.T) {
 
 	// get by client
 	storedParcels, err := store.GetByClient(client)
-	require.NoError(t, err)
-	require.Equal(t, len(parcels), len(storedParcels))
+	assert.NoError(t, err)
+	assert.Len(t, storedParcels, len(parcels))
 
 	// check
 	for _, parcel := range storedParcels {
 		orig, ok := parcelMap[parcel.Number]
-		require.True(t, ok)
-		require.Equal(t, orig.Client, parcel.Client)
-		require.Equal(t, orig.Status, parcel.Status)
-		require.Equal(t, orig.Address, parcel.Address)
-		require.Equal(t, orig.CreatedAt[:19], parcel.CreatedAt[:19])
-		// clean up
+		assert.True(t, ok)
+		assert.Equal(t, orig, parcel)
 		_ = store.Delete(parcel.Number)
 	}
 }
